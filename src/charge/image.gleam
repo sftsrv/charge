@@ -1,3 +1,9 @@
+import charge
+import charge/async
+import charge/component
+import charge/error
+import charge/internal/fs
+import charge/internal/sharp
 import gleam/dict
 import gleam/float
 import gleam/io
@@ -10,12 +16,6 @@ import gleam/string
 import gleam/uri
 import mellie
 import mellie/attr
-import charge
-import charge/async
-import charge/component
-import charge/error
-import charge/internal/fs
-import charge/internal/sharp
 
 fn optimized_images_path() {
   let assert Ok(path) = fs.site_path_from_string("/optimized-images")

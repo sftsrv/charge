@@ -1,12 +1,4 @@
 import birdie
-import gleam/dict
-import gleam/javascript/promise
-import gleam/list
-import gleam/result
-import gleam/string
-import mellie
-import mellie/attr
-import mellie/html
 import charge
 import charge/component
 import charge/error
@@ -15,6 +7,14 @@ import charge/image
 import charge/internal/fs
 import charge/markdown
 import charge/preset/default
+import gleam/dict
+import gleam/javascript/promise
+import gleam/list
+import gleam/result
+import gleam/string
+import mellie
+import mellie/attr
+import mellie/html
 
 fn dir_to_string(dir) {
   let assert Ok(files) = fs.ls_dir(dir)

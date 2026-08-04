@@ -1,12 +1,12 @@
+import charge
+import charge/date
+import charge/internal/date as idate
+import charge/internal/fs
 import gleam/list
 import gleam/option.{None, Some}
 import mellie
 import mellie/attr
 import mellie/element.{type ElementTree}
-import charge
-import charge/date
-import charge/internal/date as idate
-import charge/internal/fs
 
 pub type RSSItem {
   RSSItem(

@@ -1,3 +1,4 @@
+import charge/error.{DateParseError}
 import gleam/dynamic/decode
 import gleam/int
 import gleam/list
@@ -7,7 +8,6 @@ import gleam/string
 import parz
 import parz/combinators
 import parz/parsers
-import charge/error.{DateParseError}
 
 pub type IsoDate {
   IsoDate(year: Int, month: Int, day: Int)

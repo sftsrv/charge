@@ -1,3 +1,7 @@
+import charge/async
+import charge/component
+import charge/error.{type ChargeResult}
+import charge/internal/fs
 import gleam/javascript/promise.{type Promise}
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -5,10 +9,6 @@ import gleam/result
 import gleam/string
 import mellie
 import mellie/element.{type ElementTree}
-import charge/async
-import charge/component
-import charge/error.{type ChargeResult}
-import charge/internal/fs
 
 pub opaque type Loaded(page, aggregate) {
   Loaded(pages: List(page), aggregated: aggregate)
@@ -49,7 +49,8 @@ pub opaque type Pipeline(state, aggregate) {
 pub fn new(
   out out_dir: fs.Path,
   load load: fn() -> Result(Loaded(state, aggregate), error.ChargeError),
-  render render: fn(List(state), aggregate) -> Result(Rendered, error.ChargeError),
+  render render: fn(List(state), aggregate) ->
+    Result(Rendered, error.ChargeError),
 ) -> Pipeline(state, aggregate) {
   Pipeline(out_dir, load, async.to_async2(render))
 }
@@ -218,7 +219,10 @@ pub fn run(
   |> promise.resolve
 }
 
-fn write_one(out_dir: fs.Path, output: Asset) -> Result(Nil, error.ChargeError) {
+fn write_one(
+  out_dir: fs.Path,
+  output: Asset,
+) -> Result(Nil, error.ChargeError) {
   case output {
     HTMLFileAsset(file) -> {
       fs.write_site_file(

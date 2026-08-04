@@ -1,11 +1,11 @@
+import charge/error.{type ChargeResult}
+import charge/internal/fs
 import gleam/dict.{type Dict}
 import gleam/javascript/promise.{type Promise}
 import gleam/list
 import gleam/option
 import gleam/result
 import mellie/element.{type ElementTree, ElementNode, TextNode}
-import charge/error.{type ChargeResult}
-import charge/internal/fs
 
 type Visit(a) =
   fn(RenderData, ElementTree) -> a

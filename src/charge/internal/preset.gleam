@@ -1,13 +1,13 @@
 import argv
+import charge
+import charge/async
+import charge/error
+import charge/internal/fs
 import clip
 import clip/help
 import clip/opt
 import gleam/io
 import gleam/javascript/promise
-import charge
-import charge/async
-import charge/error
-import charge/internal/fs
 
 pub fn run_main(create_pipeline) {
   let cmd =

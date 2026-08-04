@@ -44,3 +44,9 @@ Preview the documentation
 ```sh
 gleam docs build --open
 ```
+
+## format
+
+```sh
+gleam format
+```

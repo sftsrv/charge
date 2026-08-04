@@ -1,3 +1,7 @@
+import charge
+import charge/error.{type ChargeResult, ErrorReadingFrontmatter}
+import charge/internal/fs
+import charge/internal/markdown
 import gleam/dict
 import gleam/dynamic/decode
 import gleam/list
@@ -5,10 +9,6 @@ import gleam/result
 import gleam/string
 import mellie
 import mellie/element.{type ElementTree}
-import charge
-import charge/error.{type ChargeResult, ErrorReadingFrontmatter}
-import charge/internal/fs
-import charge/internal/markdown
 import yamleam
 
 pub opaque type MarkdownFile(a) {
@@ -74,7 +74,8 @@ pub fn from_markdown(
   dir dir: fs.Path,
   decode decode: fn(fs.SitePath) -> decode.Decoder(a),
   agg agg: fn(List(a)) -> b,
-  render render: fn(MarkdownFile(a), b) -> Result(ElementTree, error.ChargeError),
+  render render: fn(MarkdownFile(a), b) ->
+    Result(ElementTree, error.ChargeError),
 ) -> charge.Pipeline(MarkdownFile(a), b) {
   charge.new(
     out: out_dir,

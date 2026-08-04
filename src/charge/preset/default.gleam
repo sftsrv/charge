@@ -1,3 +1,11 @@
+import charge
+import charge/date.{type IsoDate}
+import charge/error
+import charge/image
+import charge/internal/fs
+import charge/internal/preset
+import charge/markdown
+import charge/preset/shared
 import gleam/dict.{type Dict}
 import gleam/dynamic/decode
 import gleam/list
@@ -8,14 +16,6 @@ import gleam/result
 import gleam/string
 import mellie/attr
 import mellie/html
-import charge
-import charge/date.{type IsoDate}
-import charge/error
-import charge/image
-import charge/internal/fs
-import charge/internal/preset
-import charge/markdown
-import charge/preset/shared
 
 pub opaque type Frontmatter {
   Frontmatter(

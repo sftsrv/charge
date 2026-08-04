@@ -1,12 +1,12 @@
+import charge
+import charge/component
+import charge/error
+import charge/internal/shiki
 import gleam/javascript/promise
 import gleam/result
 import mellie
 import mellie/attr
 import mellie/html
-import charge
-import charge/component
-import charge/error
-import charge/internal/shiki
 
 fn highlight(pre) {
   let lang = get_lang(pre)

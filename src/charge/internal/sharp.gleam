@@ -1,11 +1,11 @@
+import charge/async
+import charge/error
+import charge/internal/fs
 import gleam/int
 import gleam/javascript/promise.{type Promise}
 import gleam/list
 import gleam/result
 import gleam/string
-import charge/async
-import charge/error
-import charge/internal/fs
 
 const img_size = 2000
 

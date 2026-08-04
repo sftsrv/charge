@@ -50,6 +50,8 @@ let pipeline =
   // create custom page assets
   |> charge.with_assets(tag_pages)
   |> charge.with_asset(index_page)
+  //
+  |> charge.with_components([my_custom_tag_renderer])
   // copy over some static files
   |> charge.with_static_dir(public_dir)
   // optimize images using sharp
