@@ -1,0 +1,27 @@
+name: publish
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: "26.0.2"
+          gleam-version: "1.17.0"
+          rebar3-version: "3"
+          # elixir-version: "1.15.4"
+      - uses: pnpm/action-setup@v6
+
+      - run: pnpm install
+      - run: gleam deps download
+
+      - run: gleam test --target javascript
+      - run: gleam format --check
+      - run: gleam publish -y
+        env:
+          HEXPM_API_KEY: ${{ secrets.HEXPM_API_KEY }}
