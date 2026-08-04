@@ -62,9 +62,11 @@ pipeline
 |> promise.await(todo as "handle result")
 ```
 
-HTML is defined using `mellie`, a simple page would look a bit like this:
+HTML is defined using [`mellie`](https://mellie.hexdocs.pm), a simple page would look a bit like this:
 
 ```gleam
+import mellie/html
+
 fn index(path, title, tags, entries) {
   html.body([], [
     header(title, tags),
