@@ -2,7 +2,7 @@ import charge
 import charge/async
 import charge/component
 import charge/error
-import charge/internal/fs
+import charge/fs
 import charge/internal/sharp
 import gleam/dict
 import gleam/float

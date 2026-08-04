@@ -1,6 +1,6 @@
 import charge/async
 import charge/error
-import charge/internal/fs
+import charge/fs
 import gleam/int
 import gleam/javascript/promise.{type Promise}
 import gleam/list

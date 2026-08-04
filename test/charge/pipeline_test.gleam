@@ -2,9 +2,9 @@ import birdie
 import charge
 import charge/component
 import charge/error
+import charge/fs
 import charge/highlight
 import charge/image
-import charge/internal/fs
 import charge/markdown
 import charge/preset/default
 import gleam/dict

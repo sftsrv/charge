@@ -1,7 +1,7 @@
 import charge/async
 import charge/component
 import charge/error.{type ChargeResult}
-import charge/internal/fs
+import charge/fs
 import gleam/javascript/promise.{type Promise}
 import gleam/list
 import gleam/option.{type Option, None, Some}

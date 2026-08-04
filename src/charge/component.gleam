@@ -1,5 +1,5 @@
 import charge/error.{type ChargeResult}
-import charge/internal/fs
+import charge/fs
 import gleam/dict.{type Dict}
 import gleam/javascript/promise.{type Promise}
 import gleam/list

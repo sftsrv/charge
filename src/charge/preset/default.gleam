@@ -1,8 +1,8 @@
 import charge
 import charge/date.{type IsoDate}
 import charge/error
+import charge/fs
 import charge/image
-import charge/internal/fs
 import charge/internal/preset
 import charge/markdown
 import charge/preset/shared

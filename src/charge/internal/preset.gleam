@@ -2,7 +2,7 @@ import argv
 import charge
 import charge/async
 import charge/error
-import charge/internal/fs
+import charge/fs
 import clip
 import clip/help
 import clip/opt

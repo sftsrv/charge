@@ -1,6 +1,6 @@
 import charge
 import charge/error.{type ChargeResult, ErrorReadingFrontmatter}
-import charge/internal/fs
+import charge/fs
 import charge/internal/markdown
 import gleam/dict
 import gleam/dynamic/decode
