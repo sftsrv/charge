@@ -2,6 +2,7 @@ import birdie
 import charge
 import charge/component
 import charge/error
+import charge/footnote
 import charge/fs
 import charge/highlight
 import charge/image
@@ -127,6 +128,7 @@ pub fn pipeline_with_components_test() {
       agg: default.group_by_tag,
       render: default.render_page,
     )
+    |> footnote.with_footnotes
     // extracts custom tag before rendering
     |> with_my_custom_tag_extractor
     // creates task from async tag

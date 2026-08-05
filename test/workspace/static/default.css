@@ -93,3 +93,9 @@ nav ul {
   list-style: none;
   gap: 1rem;
 }
+
+/* footnotes */
+.footnote-target::before {
+  content: "↩"
+
+}

@@ -9,9 +9,9 @@ tags:
 
 ## Welcome!
 
-This is some content in Markdown that can be rendered to your site
+This is some content in Markdown that can be rendered to your site[^1] [^2]
 
-Here's a code block and some other _fancy_ formatting
+Here's a code block and some other _fancy_[^Footnote about formatting] formatting
 
 <my-custom-tag data="hello world">
 
@@ -19,6 +19,8 @@ Here's a code block and some other _fancy_ formatting
 
 ```gleam
 code |> print_me |> echo
+
+// The footnote parser should not detect this [^1] or [^footnote]
 ```
 
 </my-custom-tag>
@@ -33,3 +35,9 @@ code |> print_me |> echo
 
 ![My second image](../../static/images/image-2.jpg)
 
+
+## Footnotes
+
+- [^1]: Or someone else's site I guess
+- [^2]: Or maybe just an RSS feed
+- [^Footnote about formatting]: Or as fancy as you can get in Markdown I guess

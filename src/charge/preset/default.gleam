@@ -1,6 +1,7 @@
 import charge
 import charge/date.{type IsoDate}
 import charge/error
+import charge/footnote
 import charge/fs
 import charge/image
 import charge/internal/preset
@@ -151,6 +152,7 @@ pub fn create_pipeline(
       agg: group_by_tag,
       render: render_page,
     )
+    |> footnote.with_footnotes
     |> charge.with_assets(tag_pages)
     |> charge.with_asset(index_page)
     |> charge.with_static_dir(static_dir)

@@ -390,6 +390,11 @@ pub fn if_html(asset: Asset, or_else: a, f: fn(HTMLFile) -> a) -> a {
   }
 }
 
+/// Update the contents of an HTML file and convert it to an asset
+pub fn update_html(file, html) {
+  HTMLFile(..file, html:) |> HTMLFileAsset
+}
+
 /// Create a `TextFile` asset that will be written to disk
 pub fn text_file(path: fs.SitePath, content: String) -> Asset {
   TextFile(path:, content:)

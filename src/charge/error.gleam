@@ -9,6 +9,8 @@ pub type ChargeResult(r) =
 pub type ChargeError {
   Context(String, ChargeError)
   Collated(List(ChargeError))
+
+  Custom(String)
   FileNotFound(String)
   ErrorReadingTextFile(String)
   ErrorReadingFrontmatter(String)
@@ -29,6 +31,7 @@ pub type ChargeError {
   ImageOptimizeError(String)
   SyntaxHighlightingError(String)
   ComponentError(String)
+  FootnoteError(String)
 }
 
 /// A drop-in replacement for result.all for merging errors into a single error object
@@ -69,6 +72,7 @@ fn error_to_string_rec(err: ChargeError, indent) {
     Collated(errs) ->
       errs |> list.map(error_to_string_rec(_, indent)) |> string.join("\n")
 
+    Custom(msg) -> "Custom: " <> msg
     FileNotFound(msg) -> "FileNotFound: " <> msg
     ErrorReadingTextFile(msg) -> "ErrorReadingTextFile: " <> msg
     ErrorReadingFrontmatter(msg) -> "ErrorReadingFrontmatter: " <> msg
@@ -89,6 +93,7 @@ fn error_to_string_rec(err: ChargeError, indent) {
     ImageOptimizeError(msg) -> "ImageOptimizeError: " <> msg
     SyntaxHighlightingError(msg) -> "SyntaxHighlightingError: " <> msg
     ComponentError(msg) -> "ComponentError: " <> msg
+    FootnoteError(msg) -> "FootnoteError: " <> msg
   }
   |> indent_str(indent)
 }

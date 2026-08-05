@@ -177,14 +177,25 @@ HTMLFile: test/workspace/pages/blog/second_post.md:/blog/second_post.html
     <main>
       <div>
         <h2>Welcome!</h2>
-        <p>This is some content in Markdown that can be rendered to your site</p>
+        <p>This is some content in Markdown that can be rendered to your site<sup id="footnote-reference-1" class="footnote-reference">
+            <a href="#footnote-target-1">1</a>
+          </sup>
+          <sup id="footnote-reference-2" class="footnote-reference">
+            <a href="#footnote-target-2">2</a>
+          </sup>
+        </p>
         <p>Here&#39;s a code block and some other
           <em>fancy</em>
+          <sup id="footnote-reference-Footnote about formatting" class="footnote-reference">
+            <a href="#footnote-target-Footnote about formatting">Footnote about formatting</a>
+          </sup>
           formatting</p>
         <my-custom-tag data="hello world">
           <h2>Nested Heading</h2>
           <pre>
             <code class="language-gleam">code |&gt; print_me |&gt; echo
+
+// The footnote parser should not detect this [^1] or [^footnote]
             </code>
           </pre>
         </my-custom-tag>
@@ -199,6 +210,21 @@ HTMLFile: test/workspace/pages/blog/second_post.md:/blog/second_post.html
         <p>
           <img aspect-ratio="1.5037593984962405" orientation="horizontal" alt="image-2" src="/optimized-images/test/workspace/static/images/image-2.webp">
         </p>
+        <h2>Footnotes</h2>
+        <ul>
+          <li>
+            <span>
+              <a id="footnote-target-1" href="#footnote-reference-1" class="footnote-target">1</a>:</span>
+            Or someone else&#39;s site I guess</li>
+          <li>
+            <span>
+              <a id="footnote-target-2" href="#footnote-reference-2" class="footnote-target">2</a>:</span>
+            Or maybe just an RSS feed</li>
+          <li>
+            <span>
+              <a id="footnote-target-Footnote about formatting" href="#footnote-reference-Footnote about formatting" class="footnote-target">Footnote about formatting</a>:</span>
+            Or as fancy as you can get in Markdown I guess</li>
+        </ul>
       </div>
     </main>
   </body>

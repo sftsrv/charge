@@ -50,3 +50,9 @@ gleam docs build --open
 ```sh
 gleam format
 ```
+
+## serve
+
+```sh
+pnpm serve .test-out
+```
