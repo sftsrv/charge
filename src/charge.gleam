@@ -74,7 +74,7 @@ pub fn loaded(
   Loaded(pages, aggregate)
 }
 
-/// The raw unit for composing async rendering pipelines
+/// The raw unit creating assets asnychronously
 pub fn with_async(
   from: Pipeline(page, aggregate),
   render: fn(aggregate) -> Promise(ChargeResult(Rendered)),
@@ -87,12 +87,42 @@ pub fn with_async(
   })
 }
 
-/// The raw unit for composing sync rendering pipelines
+/// The raw unit for creating assets
 pub fn with(
   from: Pipeline(page, aggregate),
   render: fn(aggregate) -> ChargeResult(Rendered),
 ) -> Pipeline(page, aggregate) {
   with_async(from, async.to_async1(render))
+}
+
+/// Run a transformation over each rendered asset
+pub fn map_asset(
+  from: Pipeline(state, aggregate),
+  update: fn(aggregate, Asset) -> ChargeResult(Asset),
+) -> Pipeline(state, aggregate) {
+  Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
+    use prev_result <- promise.try_await(from.render(pages, aggregated))
+
+    prev_result
+    |> list.map(update(aggregated, _))
+    |> error.collate_errors
+    |> promise.resolve
+  })
+}
+
+/// Run an async transformation over each rendered asset
+pub fn map_asset_async(
+  from: Pipeline(state, aggregate),
+  update: fn(aggregate, Asset) -> Promise(ChargeResult(Asset)),
+) -> Pipeline(state, aggregate) {
+  Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
+    use prev_result <- promise.try_await(from.render(pages, aggregated))
+
+    prev_result
+    |> list.map(update(aggregated, _))
+    |> promise.await_list
+    |> promise.map(error.collate_errors)
+  })
 }
 
 /// Derive some assets from the pipeline aggregate
@@ -139,26 +169,17 @@ pub fn with_components(
   from: Pipeline(page, aggregate),
   comps: List(component.Component(ChargeResult(ElementTree))),
 ) -> Pipeline(page, aggregate) {
-  Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
-    use prev_assets <- promise.try_await(from.render(pages, aggregated))
-
-    let rendered =
-      prev_assets
-      |> list.map(fn(a) {
-        use file <- if_html(a, a |> Ok)
-        let data =
-          component.RenderData(
-            out_dir: from.out_dir,
-            site_path: file.path,
-            source_path: file.source,
-          )
-        internal_component.render(data, file.html, comps)
-        |> result.map(fn(html) { HTMLFile(..file, html:) |> HTMLFileAsset })
-      })
-
-    rendered
-    |> error.collate_errors
-    |> promise.resolve
+  from
+  |> map_asset(fn(_, a) {
+    use file <- if_html(a, a |> Ok)
+    let data =
+      component.RenderData(
+        out_dir: from.out_dir,
+        site_path: file.path,
+        source_path: file.source,
+      )
+    internal_component.render(data, file.html, comps)
+    |> result.map(fn(html) { HTMLFile(..file, html:) |> HTMLFileAsset })
   })
 }
 
@@ -179,35 +200,25 @@ pub fn with_component(
 /// Sync components can be defined using `with_component` or `with_components`
 pub fn with_async_component(
   from: Pipeline(state, aggregate),
-  comp: #(
-    String,
-    fn(component.RenderData, ElementTree) ->
-      Promise(Result(ElementTree, error.ChargeError)),
-  ),
+  comp: component.Component(Promise(Result(ElementTree, error.ChargeError))),
 ) -> Pipeline(state, aggregate) {
-  Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
-    use prev_assets <- promise.try_await(from.render(pages, aggregated))
+  from
+  |> map_asset_async(fn(_, a) {
+    use file <- if_html(a, promise.resolve(Ok(a)))
 
-    prev_assets
-    |> list.map(fn(a) {
-      use file <- if_html(a, promise.resolve(Ok(a)))
+    let data =
+      component.RenderData(
+        out_dir: from.out_dir,
+        site_path: file.path,
+        source_path: file.source,
+      )
 
-      let data =
-        component.RenderData(
-          out_dir: from.out_dir,
-          site_path: file.path,
-          source_path: file.source,
-        )
-
-      internal_component.render_async(data, file.html, comp)
-      |> promise.map_try(fn(html) {
-        HTMLFile(..file, html: html)
-        |> HTMLFileAsset
-        |> Ok
-      })
+    internal_component.render_async(data, file.html, comp)
+    |> promise.map_try(fn(html) {
+      HTMLFile(..file, html: html)
+      |> HTMLFileAsset
+      |> Ok
     })
-    |> promise.await_list
-    |> promise.map(error.collate_errors)
   })
 }
 
