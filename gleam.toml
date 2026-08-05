@@ -1,12 +1,16 @@
 name = "charge"
 version = "1.1.0"
+target = "javascript"
 
 description = "A composable static site generator for Gleam"
 licences = ["Apache-2.0"]
 repository = { type = "github", user = "sftsrv", repo = "charge" }
 links = [{ title = "me", href = "https://nabeelvalley.co.za" }]
 
-target = "javascript"
+[documentation]
+pages = [
+    { title = "Getting Started", path = "getting-started.html", source = "./docs/getting-started.md" }
+]
 
 [javascript]
 runtime = "node"

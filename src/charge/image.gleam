@@ -23,6 +23,16 @@ fn optimized_images_path() {
   path
 }
 
+/// Optimize all images that can be resolved within the HTML using [sharp](https://sharp.pixelplumbing.com/).
+/// Images are converted to WEBP
+///
+/// Images are resolved with respect to the `static_images_dir` provided or the current HTML file's source
+/// and put into the `/optimized-images` path in the pipeline's output
+/// 
+/// Additionally it will append the following attributes to the element:
+/// 
+/// - `orientation` of `horizontal` or `vertical`
+/// - `aspect-ratio`
 pub fn with_image_optimization(pipeline, static_images_dir: fs.Path) {
   let optimized_dir = optimized_images_path()
 

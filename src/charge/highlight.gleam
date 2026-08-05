@@ -47,6 +47,7 @@ fn render(highlighted, lang) {
   ))
 }
 
+/// Enable [shiki](https://shiki.style/) based syntax highlighting for all `pre > code` tags within a page
 pub fn with_syntax_highlighting(pipeline) {
   pipeline
   |> charge.with_async_component(

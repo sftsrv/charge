@@ -2,6 +2,7 @@ import charge/async
 import charge/component
 import charge/error.{type ChargeResult}
 import charge/fs
+import charge/internal/component as internal_component
 import gleam/javascript/promise.{type Promise}
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -10,6 +11,7 @@ import gleam/string
 import mellie
 import mellie/element.{type ElementTree}
 
+/// Represents the current collection of data in the pipeline
 pub opaque type Loaded(page, aggregate) {
   Loaded(pages: List(page), aggregated: aggregate)
 }
@@ -17,24 +19,33 @@ pub opaque type Loaded(page, aggregate) {
 type Loader(state, aggregate) =
   fn() -> ChargeResult(Loaded(state, aggregate))
 
-type Renderer(state, aggregate) =
+pub type Renderer(state, aggregate) =
   fn(List(state), aggregate) -> Promise(ChargeResult(Rendered))
 
+/// Represents the list of assets rendered in a pipeline so far
 pub type Rendered =
   List(Asset)
 
+/// Represents an HTML file that will be comitted to disk when assets are written
 pub type HTMLFile {
   HTMLFile(source: Option(fs.Path), path: fs.SitePath, html: ElementTree)
 }
 
+/// Types of assets within a pipeline
 pub opaque type Asset {
-  HTMLFileAsset(HTMLFile)
+  /// Represents a directory that will be copied
   CopyDirAsset(from: fs.Path, to: fs.SitePath)
-  TaskResult(fs.SitePath)
+  /// Represents an HTML file that will be written to disk
+  HTMLFileAsset(HTMLFile)
+  /// Represents a generic text file that will be written to disk
   TextFile(path: fs.SitePath, content: String)
+
+  /// Represents a list of files that would have been written as a result of a task
+  TaskResult(fs.SitePath)
 }
 
-/// load -> process -> persist
+/// Represents a composable pipeline with `state` and `aggregate` data that is
+/// passed between stages
 pub opaque type Pipeline(state, aggregate) {
   Pipeline(
     out_dir: fs.Path,
@@ -46,15 +57,16 @@ pub opaque type Pipeline(state, aggregate) {
   )
 }
 
+/// Createa a new pipeline from scratch
 pub fn new(
   out out_dir: fs.Path,
-  load load: fn() -> Result(Loaded(state, aggregate), error.ChargeError),
-  render render: fn(List(state), aggregate) ->
-    Result(Rendered, error.ChargeError),
+  load load: fn() -> ChargeResult(Loaded(state, aggregate)),
+  render render: fn(List(state), aggregate) -> ChargeResult(Rendered),
 ) -> Pipeline(state, aggregate) {
   Pipeline(out_dir, load, async.to_async2(render))
 }
 
+/// Create the loaded data to be returned from a pipeline
 pub fn loaded(
   pages pages: List(page),
   aggregate aggregate: aggregate,
@@ -62,7 +74,7 @@ pub fn loaded(
   Loaded(pages, aggregate)
 }
 
-/// The raw unit for composing sync rendering pipelines
+/// The raw unit for composing async rendering pipelines
 pub fn with_async(
   from: Pipeline(page, aggregate),
   render: fn(aggregate) -> Promise(ChargeResult(Rendered)),
@@ -75,6 +87,7 @@ pub fn with_async(
   })
 }
 
+/// The raw unit for composing sync rendering pipelines
 pub fn with(
   from: Pipeline(page, aggregate),
   render: fn(aggregate) -> ChargeResult(Rendered),
@@ -119,6 +132,9 @@ pub fn with_static_dir(
 }
 
 /// Add server-side components to the pipeline
+/// Components can be defined using `component.new`.
+///
+/// Async components can be defined using `with_async_component`
 pub fn with_components(
   from: Pipeline(page, aggregate),
   comps: List(component.Component(ChargeResult(ElementTree))),
@@ -130,8 +146,13 @@ pub fn with_components(
       prev_assets
       |> list.map(fn(a) {
         use file <- if_html(a, a |> Ok)
-
-        component.render(file.source, file.path, from.out_dir, file.html, comps)
+        let data =
+          component.RenderData(
+            out_dir: from.out_dir,
+            site_path: file.path,
+            source_path: file.source,
+          )
+        internal_component.render(data, file.html, comps)
         |> result.map(fn(html) { HTMLFile(..file, html:) |> HTMLFileAsset })
       })
 
@@ -141,7 +162,29 @@ pub fn with_components(
   })
 }
 
-pub fn with_async_component(from, comp) {
+/// Add a server-side component to the pipeline
+/// Components can be defined using `component.new`.
+///
+/// Async components can be defined using `with_async_component`
+pub fn with_component(
+  from: Pipeline(page, aggregate),
+  component: component.Component(ChargeResult(ElementTree)),
+) -> Pipeline(page, aggregate) {
+  with_components(from, [component])
+}
+
+/// Add a server-side component to the pipeline
+/// Components can be defined using `component.new`.
+///
+/// Sync components can be defined using `with_component` or `with_components`
+pub fn with_async_component(
+  from: Pipeline(state, aggregate),
+  comp: #(
+    String,
+    fn(component.RenderData, ElementTree) ->
+      Promise(Result(ElementTree, error.ChargeError)),
+  ),
+) -> Pipeline(state, aggregate) {
   Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
     use prev_assets <- promise.try_await(from.render(pages, aggregated))
 
@@ -149,13 +192,14 @@ pub fn with_async_component(from, comp) {
     |> list.map(fn(a) {
       use file <- if_html(a, promise.resolve(Ok(a)))
 
-      component.render_async(
-        file.source,
-        file.path,
-        from.out_dir,
-        file.html,
-        comp,
-      )
+      let data =
+        component.RenderData(
+          out_dir: from.out_dir,
+          site_path: file.path,
+          source_path: file.source,
+        )
+
+      internal_component.render_async(data, file.html, comp)
       |> promise.map_try(fn(html) {
         HTMLFile(..file, html: html)
         |> HTMLFileAsset
@@ -188,7 +232,14 @@ pub fn with_derived_assets(
 
 /// Add some generic tasks into the pipeline given all the assets rendered till this point as well as the relevant aggregate
 /// e.g. running creating an accessibility report on all generated html pages, creating an RSS Feed, etc.
-pub fn with_summary(from, summarize) {
+///
+/// This receives all previously processed assets so it should likely only be used once all other assets
+/// are fully processed
+pub fn with_summary(
+  from: Pipeline(state, aggregate),
+  summarize: fn(List(Asset), aggregate) ->
+    Result(List(Asset), error.ChargeError),
+) -> Pipeline(state, aggregate) {
   Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
     use prev_assets <- promise.try_await(from.render(pages, aggregated))
 
@@ -201,7 +252,7 @@ pub fn with_summary(from, summarize) {
 /// Cleans the output directory and runs the pipeline
 pub fn run(
   pipeline: Pipeline(page, aggregate),
-) -> Promise(Result(List(Asset), error.ChargeError)) {
+) -> Promise(ChargeResult(List(Asset))) {
   use _ <- async.try_resolve(
     fs.delete_dir_if_exists(pipeline.out_dir)
     |> fn(_) { Ok(Nil) },
@@ -219,10 +270,7 @@ pub fn run(
   |> promise.resolve
 }
 
-fn write_one(
-  out_dir: fs.Path,
-  output: Asset,
-) -> Result(Nil, error.ChargeError) {
+fn write_one(out_dir: fs.Path, output: Asset) -> ChargeResult(Nil) {
   case output {
     HTMLFileAsset(file) -> {
       fs.write_site_file(
@@ -237,8 +285,7 @@ fn write_one(
   }
 }
 
-/// Write all resulting assets from the pipeline to disc
-fn write_all(out_dir, assets: List(Asset)) -> Result(Nil, error.ChargeError) {
+fn write_all(out_dir: fs.Path, assets: List(Asset)) -> ChargeResult(Nil) {
   // handle async asset rendering before comitting file
   assets
   |> list.map(write_one(out_dir, _))
@@ -246,10 +293,13 @@ fn write_all(out_dir, assets: List(Asset)) -> Result(Nil, error.ChargeError) {
   |> result.replace(Nil)
 }
 
+/// Create an HTML File asset that is marked as `generated` - i.e. it is not based on another file on disk
 pub fn generated_html_file(path: fs.SitePath, rendered: ElementTree) -> Asset {
   HTMLFile(None, path, rendered) |> HTMLFileAsset
 }
 
+/// Create an HTML File asset that is marked as `derived` - i.e. it is based on another source file on disk
+/// such as a markdown file on disk
 pub fn derived_html_file(
   source: fs.Path,
   path: fs.SitePath,
@@ -258,7 +308,7 @@ pub fn derived_html_file(
   HTMLFile(Some(source), path, rendered) |> HTMLFileAsset
 }
 
-pub fn sort_assets(assets: List(Asset)) -> List(Asset) {
+fn sort_assets(assets: List(Asset)) -> List(Asset) {
   assets
   |> list.sort(fn(a, b) {
     string.compare(
@@ -277,6 +327,7 @@ fn asset_path(asset: Asset) -> fs.SitePath {
   }
 }
 
+/// Converts an asset to a string - useful for snapshot testing.
 pub fn asset_to_readable_string(asset: Asset) -> String {
   case asset {
     HTMLFileAsset(file) ->
@@ -299,6 +350,7 @@ pub fn asset_to_readable_string(asset: Asset) -> String {
   }
 }
 
+/// Find an asset given a `SitePath`
 pub fn find_asset(
   assets: List(Asset),
   path: fs.SitePath,
@@ -306,6 +358,8 @@ pub fn find_asset(
   assets |> list.find(fn(a) { path == a |> asset_path })
 }
 
+/// Converts an asset to a string - useful for snapshot testing.
+/// Assets are ordered by path and can be used for snapshot testing
 pub fn assets_to_readable_string(assets: List(Asset)) -> String {
   assets
   |> sort_assets
@@ -317,13 +371,15 @@ fn merge_rendered(a: Rendered, b: Rendered) -> Rendered {
   list.append(a, b)
 }
 
-pub fn if_html(asset: Asset, or_else, f) {
+/// Guard to be used for running transformations on HTML assets
+pub fn if_html(asset: Asset, or_else: a, f: fn(HTMLFile) -> a) -> a {
   case asset {
     HTMLFileAsset(file) -> f(file)
     _ -> or_else
   }
 }
 
-pub fn text_file(path: fs.SitePath, content: String) {
+/// Create a `TextFile` asset that will be written to disk
+pub fn text_file(path: fs.SitePath, content: String) -> Asset {
   TextFile(path:, content:)
 }

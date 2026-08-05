@@ -10,10 +10,12 @@ pub fn try_resolve(result, cb) {
   }
 }
 
-pub fn to_async2(f) {
-  fn(a, b) { f(a, b) |> promise.resolve }
-}
-
+/// Convert a one-parameter function to an async one
 pub fn to_async1(f) {
   fn(a) { f(a) |> promise.resolve }
+}
+
+/// Convert a two-parameter function to an async one
+pub fn to_async2(f) {
+  fn(a, b) { f(a, b) |> promise.resolve }
 }

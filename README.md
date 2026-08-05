@@ -20,7 +20,25 @@ gleam add charge@1 mellie@2
 pnpm add @gleam-lang/highlight dom-serializer@3 htmlparser2@12 marked@18 marked-katex-extension@5 sharp@0 shiki@4
 ```
 
-## Usage
+## Features
+
+> Take a look at the [Getting Started Guide](https://charge.hexdocs.pm/getting-started.html) to - ya know, get started
+
+`charge` uses a rendering pipeline that's defined in terms of data loading and asset transformation. Complex behavior can be composed from smaller parts that operate on previously rendered assets.
+
+Some of the functionality that's provided out of the box is:
+
+- Generation of pages from Markdown
+- Sync and Async rendering of server-side components
+- Image optimization
+- Syntax highlighting
+- RSS Feed generation
+
+Due to the composability of pipelines, you can add in additional functionality with minimal overhead
+
+## Getting Started
+
+> Complete documentation can be found at <https://hexdocs.pm/charge>.
 
 `charge` works by defining a processing pipeline for files and provides utilities to help simplify and manage dependent and asynchronous tasks for doing this
 
@@ -76,8 +94,6 @@ fn index(path, title, tags, entries) {
   |> charge.generated_html_file(path, _)
 }
 ```
-
-There are a few other plugins and composition functions that are useful for more complex site pipelines. Further documentation can be found at <https://hexdocs.pm/charge>.
 
 For a complete example of a pipeline with all rendering included, take a look at `src/charge/preset/default.gleam`
 

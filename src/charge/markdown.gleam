@@ -11,6 +11,9 @@ import mellie
 import mellie/element.{type ElementTree}
 import yamleam
 
+/// Represents a parsed markdown file with frontmatter.
+///
+/// Markdown parsing uses [`marked`](https://marked.js.org/)
 pub opaque type MarkdownFile(a) {
   MarkdownFile(
     path: fs.Path,
@@ -69,13 +72,14 @@ fn read_files(dir: fs.Path, decode_frontmatter) {
   |> result.map_error(error.error_context(_, dir |> fs.path_to_string))
 }
 
+/// Create a pipeline that loads markdown files as it's initial source with
+/// included page rendering, aggregation, and frontmatter parsing
 pub fn from_markdown(
   out out_dir: fs.Path,
   dir dir: fs.Path,
   decode decode: fn(fs.SitePath) -> decode.Decoder(a),
   agg agg: fn(List(a)) -> b,
-  render render: fn(MarkdownFile(a), b) ->
-    Result(ElementTree, error.ChargeError),
+  render render: fn(MarkdownFile(a), b) -> ChargeResult(ElementTree),
 ) -> charge.Pipeline(MarkdownFile(a), b) {
   charge.new(
     out: out_dir,
@@ -84,9 +88,8 @@ pub fn from_markdown(
 
       charge.loaded(pages, pages |> list.map(frontmatter) |> agg)
     },
-    render: fn(pages: List(MarkdownFile(a)), agg: b) -> Result(
+    render: fn(pages: List(MarkdownFile(a)), agg: b) -> ChargeResult(
       charge.Rendered,
-      error.ChargeError,
     ) {
       pages
       |> list.map(fn(page) {
@@ -100,6 +103,7 @@ pub fn from_markdown(
   )
 }
 
+/// Get the frontmatter from a markdown file
 pub fn frontmatter(file: MarkdownFile(a)) {
   file.frontmatter
 }
@@ -114,11 +118,12 @@ fn to_site_path(base: fs.Path, file: fs.Path) {
   fs.to_site_path(base, file, exts())
 }
 
+/// Convert a markdown file to an HTML asset with fully-rendered HTML content
 pub fn to_html_file(file: MarkdownFile(a), rendered: ElementTree) {
   charge.derived_html_file(file.path, file.site_path, rendered)
 }
 
-pub fn replace_body(tree: ElementTree) {
+fn replace_body(tree: ElementTree) {
   tree
   |> mellie.get_child_by_tag("body")
   |> result.replace_error(error.ErrorRenderingMarkdown(
