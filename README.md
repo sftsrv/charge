@@ -17,7 +17,7 @@ gleam add charge@1 mellie@2
 
 ```sh
 # using pnpm for example
-pnpm add @gleam-lang/highlight dom-serializer@3 htmlparser2@12 marked@18 marked-katex-extension@5 sharp@0 shiki@4
+pnpm add @gleam-lang/highlight.js-gleam@1 dom-serializer@3 htmlparser2@12 marked@18 marked-katex-extension@5 sharp@0 shiki@4
 ```
 
 ## Features
