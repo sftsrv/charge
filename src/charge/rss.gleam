@@ -28,7 +28,7 @@ fn rss_path() {
 }
 
 pub fn with_rss(
-  pipeline: charge.Pipeline(a, b),
+  pipeline: charge.Pipeline(b),
   feed: RSSFeed,
   get_item: fn(b, charge.HTMLFile) -> option.Option(RSSItem),
 ) {

@@ -10,6 +10,11 @@ pub fn try_resolve(result, cb) {
   }
 }
 
+/// Convert a parameterless function to an async one
+pub fn to_async0(f) {
+  fn() { f() |> promise.resolve }
+}
+
 /// Convert a one-parameter function to an async one
 pub fn to_async1(f) {
   fn(a) { f(a) |> promise.resolve }

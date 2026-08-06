@@ -80,7 +80,7 @@ pub fn from_markdown(
   decode decode: fn(fs.SitePath) -> decode.Decoder(a),
   agg agg: fn(List(a)) -> b,
   render render: fn(MarkdownFile(a), b) -> ChargeResult(ElementTree),
-) -> charge.Pipeline(MarkdownFile(a), b) {
+) -> charge.Pipeline(b) {
   charge.new(
     out: out_dir,
     load: fn() {

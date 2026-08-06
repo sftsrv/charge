@@ -13,8 +13,9 @@ pub type IsoDate {
   IsoDate(year: Int, month: Int, day: Int)
 }
 
-/// parses a date in the format of yyyy-mm-dd
-fn parser() {
+/// Parz-based parser for date parsing.
+/// Parses dates in the format of yyyy-mm-dd
+pub fn parser() {
   let digits =
     parsers.digits()
     |> combinators.try_map(int.parse)
@@ -34,6 +35,8 @@ fn parser() {
   })
 }
 
+/// Parses dates in the format of yyyy-mm-dd.
+/// Does not validate the structure of the actual date
 pub fn parse(str: String) {
   let result = parz.run(str, parser())
   case result {

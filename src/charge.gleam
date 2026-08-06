@@ -12,15 +12,12 @@ import mellie
 import mellie/element.{type ElementTree}
 
 /// Represents the current collection of data in the pipeline
-pub opaque type Loaded(page, aggregate) {
-  Loaded(pages: List(page), aggregated: aggregate)
+pub opaque type Loaded(pages, aggregate) {
+  Loaded(pages: pages, aggregated: aggregate)
 }
 
-type Loader(state, aggregate) =
-  fn() -> ChargeResult(Loaded(state, aggregate))
-
-pub type Renderer(state, aggregate) =
-  fn(List(state), aggregate) -> Promise(ChargeResult(Rendered))
+pub type Renderer(aggregate) =
+  fn() -> Promise(ChargeResult(Loaded(List(Asset), aggregate)))
 
 /// Represents the list of assets rendered in a pipeline so far
 pub type Rendered =
@@ -46,29 +43,36 @@ pub opaque type Asset {
 
 /// Represents a composable pipeline with `state` and `aggregate` data that is
 /// passed between stages
-pub opaque type Pipeline(state, aggregate) {
+pub opaque type Pipeline(aggregate) {
   Pipeline(
     out_dir: fs.Path,
+    // load: Loader(state, aggregate),
     /// Loads all data in so that any non-render output
     /// can be shared with other pages and pipelines
-    load: Loader(state, aggregate),
     /// Process a single page - receives aggregated data
-    render: Renderer(state, aggregate),
+    render: Renderer(aggregate),
   )
 }
 
 /// Createa a new pipeline from scratch
 pub fn new(
   out out_dir: fs.Path,
-  load load: fn() -> ChargeResult(Loaded(state, aggregate)),
-  render render: fn(List(state), aggregate) -> ChargeResult(Rendered),
-) -> Pipeline(state, aggregate) {
-  Pipeline(out_dir, load, async.to_async2(render))
+  load load: fn() -> ChargeResult(Loaded(List(a), b)),
+  render render: fn(List(a), b) -> ChargeResult(List(Asset)),
+) -> Pipeline(b) {
+  Pipeline(out_dir, fn() {
+    use loaded <- async.try_resolve(load())
+    use rendered <- async.try_resolve(render(loaded.pages, loaded.aggregated))
+
+    Loaded(pages: rendered, aggregated: loaded.aggregated)
+    |> Ok
+    |> promise.resolve
+  })
 }
 
 /// Create the loaded data to be returned from a pipeline
 pub fn loaded(
-  pages pages: List(page),
+  pages pages: page,
   aggregate aggregate: aggregate,
 ) -> Loaded(page, aggregate) {
   Loaded(pages, aggregate)
@@ -76,74 +80,76 @@ pub fn loaded(
 
 /// The raw unit creating assets asnychronously
 pub fn with_async(
-  from: Pipeline(page, aggregate),
+  from: Pipeline(aggregate),
   render: fn(aggregate) -> Promise(ChargeResult(Rendered)),
-) -> Pipeline(page, aggregate) {
-  Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
-    use prev_result <- promise.try_await(from.render(pages, aggregated))
+) {
+  Pipeline(..from, render: fn() {
+    use prev_result <- promise.try_await(from.render())
 
-    render(aggregated)
-    |> promise.map(result.map(_, merge_rendered(prev_result, _)))
+    use rendered <- promise.try_await(render(prev_result.aggregated))
+
+    Loaded(..prev_result, pages: merge_rendered(prev_result.pages, rendered))
+    |> Ok
+    |> promise.resolve
   })
 }
 
 /// The raw unit for creating assets
 pub fn with(
-  from: Pipeline(page, aggregate),
+  from: Pipeline(aggregate),
   render: fn(aggregate) -> ChargeResult(Rendered),
-) -> Pipeline(page, aggregate) {
+) -> Pipeline(aggregate) {
   with_async(from, async.to_async1(render))
 }
 
 /// Run a transformation over each rendered asset
 pub fn map_asset(
-  from: Pipeline(state, aggregate),
+  from: Pipeline(aggregate),
   update: fn(aggregate, Asset) -> ChargeResult(Asset),
-) -> Pipeline(state, aggregate) {
-  Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
-    use prev_result <- promise.try_await(from.render(pages, aggregated))
-
-    prev_result
-    |> list.map(update(aggregated, _))
-    |> error.collate_errors
-    |> promise.resolve
-  })
+) -> Pipeline(aggregate) {
+  map_asset_async(from, async.to_async2(update))
 }
 
 /// Run an async transformation over each rendered asset
 pub fn map_asset_async(
-  from: Pipeline(state, aggregate),
+  from: Pipeline(aggregate),
   update: fn(aggregate, Asset) -> Promise(ChargeResult(Asset)),
-) -> Pipeline(state, aggregate) {
-  Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
-    use prev_result <- promise.try_await(from.render(pages, aggregated))
+) -> Pipeline(aggregate) {
+  Pipeline(..from, render: fn() {
+    use prev_result <- promise.try_await(from.render())
 
-    prev_result
-    |> list.map(update(aggregated, _))
+    prev_result.pages
+    |> list.map(update(prev_result.aggregated, _))
     |> promise.await_list
     |> promise.map(error.collate_errors)
+    |> promise.map_try(fn(rendered) {
+      Loaded(..prev_result, pages: rendered)
+      |> Ok
+    })
   })
 }
 
 /// Derive some assets from the pipeline aggregate
 pub fn with_assets(
-  from: Pipeline(page, aggregate),
+  from: Pipeline(aggregate),
   render: fn(aggregate) -> ChargeResult(List(Asset)),
-) -> Pipeline(page, aggregate) {
-  Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
-    use prev_result <- promise.try_await(from.render(pages, aggregated))
+) -> Pipeline(aggregate) {
+  Pipeline(..from, render: fn() {
+    use prev_result <- promise.try_await(from.render())
 
-    render(aggregated)
-    |> result.map(merge_rendered(prev_result, _))
+    render(prev_result.aggregated)
+    |> result.map(fn(rendered) {
+      Loaded(..prev_result, pages: merge_rendered(prev_result.pages, rendered))
+    })
     |> promise.resolve
   })
 }
 
 /// Derive an asset from the pipeline aggregate
 pub fn with_asset(
-  from: Pipeline(page, aggregate),
+  from: Pipeline(aggregate),
   render: fn(aggregate) -> ChargeResult(Asset),
-) -> Pipeline(page, aggregate) {
+) -> Pipeline(aggregate) {
   use agg <- with(from)
   use out <- result.map(render(agg))
 
@@ -152,9 +158,9 @@ pub fn with_asset(
 
 /// Add a static directory to be copied as part of the pipeline
 pub fn with_static_dir(
-  pipeline: Pipeline(page, aggregate),
+  pipeline: Pipeline(aggregate),
   dir: fs.Path,
-) -> Pipeline(page, aggregate) {
+) -> Pipeline(aggregate) {
   use _ <- with(pipeline)
   use to <- result.map(fs.site_path_from_string("/"))
 
@@ -166,9 +172,9 @@ pub fn with_static_dir(
 ///
 /// Async components can be defined using `with_async_component`
 pub fn with_components(
-  from: Pipeline(page, aggregate),
+  from: Pipeline(aggregate),
   comps: List(component.Component(ChargeResult(ElementTree))),
-) -> Pipeline(page, aggregate) {
+) -> Pipeline(aggregate) {
   from
   |> map_asset(fn(_, a) {
     use file <- if_html(a, a |> Ok)
@@ -188,9 +194,9 @@ pub fn with_components(
 ///
 /// Async components can be defined using `with_async_component`
 pub fn with_component(
-  from: Pipeline(page, aggregate),
+  from: Pipeline(aggregate),
   component: component.Component(ChargeResult(ElementTree)),
-) -> Pipeline(page, aggregate) {
+) -> Pipeline(aggregate) {
   with_components(from, [component])
 }
 
@@ -199,9 +205,9 @@ pub fn with_component(
 ///
 /// Sync components can be defined using `with_component` or `with_components`
 pub fn with_async_component(
-  from: Pipeline(state, aggregate),
+  from: Pipeline(aggregate),
   comp: component.Component(Promise(Result(ElementTree, error.ChargeError))),
-) -> Pipeline(state, aggregate) {
+) -> Pipeline(aggregate) {
   from
   |> map_asset_async(fn(_, a) {
     use file <- if_html(a, promise.resolve(Ok(a)))
@@ -224,19 +230,19 @@ pub fn with_async_component(
 
 /// Add assets that are derived from an existing asset, e.g. providing an alternate of each page
 pub fn with_derived_assets(
-  from: Pipeline(page, aggregate),
+  from: Pipeline(aggregate),
   extract: fn(Asset) -> ChargeResult(List(Asset)),
-) -> Pipeline(page, aggregate) {
-  Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
-    use prev_assets <- promise.try_await(from.render(pages, aggregated))
+) -> Pipeline(aggregate) {
+  Pipeline(..from, render: fn() {
+    use prev_result <- promise.try_await(from.render())
 
-    let results =
-      prev_assets
-      |> list.map(extract)
-      |> error.collate_errors
-      |> result.map(list.flatten)
-
-    result.map(results, fn(result) { merge_rendered(prev_assets, result) })
+    prev_result.pages
+    |> list.map(extract)
+    |> error.collate_errors
+    |> result.map(list.flatten)
+    |> result.map(fn(rendered) {
+      Loaded(..prev_result, pages: merge_rendered(prev_result.pages, rendered))
+    })
     |> promise.resolve
   })
 }
@@ -247,37 +253,34 @@ pub fn with_derived_assets(
 /// This receives all previously processed assets so it should likely only be used once all other assets
 /// are fully processed
 pub fn with_summary(
-  from: Pipeline(state, aggregate),
+  from: Pipeline(aggregate),
   summarize: fn(List(Asset), aggregate) ->
     Result(List(Asset), error.ChargeError),
-) -> Pipeline(state, aggregate) {
-  Pipeline(..from, load: from.load, render: fn(pages, aggregated) {
-    use prev_assets <- promise.try_await(from.render(pages, aggregated))
+) -> Pipeline(aggregate) {
+  Pipeline(..from, render: fn() {
+    use prev_result <- promise.try_await(from.render())
 
-    summarize(prev_assets, aggregated)
-    |> result.map(merge_rendered(prev_assets, _))
+    summarize(prev_result.pages, prev_result.aggregated)
+    |> result.map(fn(rendered) {
+      Loaded(..prev_result, pages: merge_rendered(prev_result.pages, rendered))
+    })
     |> promise.resolve
   })
 }
 
 /// Cleans the output directory and runs the pipeline
 pub fn run(
-  pipeline: Pipeline(page, aggregate),
+  pipeline: Pipeline(aggregate),
 ) -> Promise(ChargeResult(List(Asset))) {
   use _ <- async.try_resolve(
     fs.delete_dir_if_exists(pipeline.out_dir)
     |> fn(_) { Ok(Nil) },
   )
 
-  use loaded <- async.try_resolve(pipeline.load())
+  use rendered <- promise.try_await(pipeline.render())
 
-  use assets <- promise.try_await(pipeline.render(
-    loaded.pages,
-    loaded.aggregated,
-  ))
-
-  write_all(pipeline.out_dir, assets)
-  |> result.replace(assets)
+  write_all(pipeline.out_dir, rendered.pages)
+  |> result.replace(rendered.pages)
   |> promise.resolve
 }
 
