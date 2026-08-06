@@ -60,6 +60,9 @@ pub fn pipeline_with_components_test() {
   let assert Ok(text_output_file_path) =
     fs.site_path_from_string("/blog/second_post_text.html")
 
+  let assert Ok(switched_data_path) =
+    fs.site_path_from_string("/frontmatter-keys.txt")
+
   let with_my_custom_tag_extractor = charge.with_derived_assets(_, fn(a) {
     use file <- charge.if_html(a, Ok([]))
 
@@ -139,6 +142,10 @@ pub fn pipeline_with_components_test() {
     |> image.with_image_optimization(static)
     // shiki syntax highlighting
     |> highlight.with_syntax_highlighting
+    |> charge.switch(fn(fm) { dict.keys(fm) |> string.join("\n") |> Ok })
+    |> charge.with_asset(fn(keys) {
+      charge.text_file(switched_data_path, keys) |> Ok
+    })
 
   use rendered <- promise.await(pipeline |> charge.run)
   let assert Ok(assets) = rendered
@@ -149,7 +156,10 @@ pub fn pipeline_with_components_test() {
   let assert Ok(text_output_page) =
     assets |> charge.find_asset(text_output_file_path)
 
-  [custom_tag_page, text_output_page]
+  let assert Ok(switched_data_page) =
+    assets |> charge.find_asset(switched_data_path)
+
+  [custom_tag_page, text_output_page, switched_data_page]
   |> charge.assets_to_readable_string
   |> birdie.snap("custom component assets")
   |> promise.resolve

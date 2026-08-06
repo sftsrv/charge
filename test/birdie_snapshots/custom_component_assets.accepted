@@ -85,3 +85,7 @@ Nested Heading
 code |&gt; print_me |&gt; echo
 
 // The footnote parser should not detect this [^1] or [^footnote]
+
+Text File : /frontmatter-keys.txt:
+special
+blog

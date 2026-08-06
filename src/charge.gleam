@@ -78,6 +78,27 @@ pub fn loaded(
   Loaded(pages, aggregate)
 }
 
+/// Switches a pipelines data context using a transform
+pub fn switch(
+  from: Pipeline(a),
+  transform: fn(a) -> Result(b, error.ChargeError),
+) -> Pipeline(b) {
+  switch_async(from, async.to_async1(transform))
+}
+
+/// Switches a pipelines data context using an async transform
+pub fn switch_async(
+  from: Pipeline(a),
+  transform: fn(a) -> Promise(Result(b, error.ChargeError)),
+) -> Pipeline(b) {
+  Pipeline(..from, render: fn() {
+    use rendered <- promise.try_await(from.render())
+    use aggregated <- promise.try_await(transform(rendered.aggregated))
+
+    Loaded(..rendered, aggregated:) |> Ok |> promise.resolve
+  })
+}
+
 /// The raw unit creating assets asnychronously
 pub fn with_async(
   from: Pipeline(aggregate),
