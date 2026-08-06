@@ -10,12 +10,25 @@ import { Metadata }
   from "./sharp.mjs";
 
 
+const cache = {
+  meta: new Map(),
+  generate: new Set(),
+}
+
 /**
  * @param {string} inputFile
  * @param {string} outputFile
  * @param {number} size
  */
 export async function generate(inputFile, outputFile, size) {
+  const key = size + "::" + inputFile + "::" + outputFile
+
+  if (cache.generate.has(key)) {
+    return Result$Ok()
+  }
+
+  cache.generate.add(key)
+
   try {
     const sharp = new Sharp(inputFile, {
       autoOrient: true,
@@ -32,6 +45,7 @@ export async function generate(inputFile, outputFile, size) {
       })
       .toFile(outputFile)
 
+    cache.generate.add(key)
     return Result$Ok()
   } catch (err) {
     return Result$Error(`Sharp Error for file: ${inputFile} \n${err}`)
@@ -42,15 +56,22 @@ export async function generate(inputFile, outputFile, size) {
  * @param {string} inputFile
  */
 export async function meta(inputFile) {
+  const had = cache.meta.get(inputFile)
+  if (had) {
+    return Result$Ok(had)
+  }
+
   try {
     const sharp = new Sharp(inputFile, {
       autoOrient: true,
     })
 
     const meta = await sharp.rotate().metadata()
-    const {width, height} = meta.autoOrient
+    const { width, height } = meta.autoOrient
 
     const result = new Metadata(width, height)
+    cache.meta.set(inputFile, result)
+
     return Result$Ok(result)
   } catch (err) {
     return Result$Error(`${err}`)
