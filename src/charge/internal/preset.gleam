@@ -4,10 +4,12 @@ import charge/async
 import charge/error
 import charge/fs
 import clip
+import clip/flag
 import clip/help
 import clip/opt
 import gleam/io
 import gleam/javascript/promise
+import gleave
 
 pub fn run_main(create_pipeline) {
   let cmd =
@@ -15,21 +17,25 @@ pub fn run_main(create_pipeline) {
       use pages <- clip.parameter
       use static <- clip.parameter
       use out <- clip.parameter
+      use dev <- clip.parameter
 
       use pages <- async.try_resolve(fs.from_cwd(pages))
       use static <- async.try_resolve(fs.from_cwd(static))
       use out <- async.try_resolve(fs.ensure_relative_dir(out))
 
-      let pipeline = create_pipeline(out, pages, static)
+      let run = case dev {
+        False -> charge.run
+        True -> charge.run_dev
+      }
 
-      pipeline
-      |> charge.run()
+      create_pipeline(out, pages, static) |> run
     })
     |> clip.opt(opt.new("pages") |> opt.help("directory to load pages from"))
     |> clip.opt(
       opt.new("static") |> opt.help("directory with static content to copy"),
     )
     |> clip.opt(opt.new("out") |> opt.help("directory to save to"))
+    |> clip.flag(flag.new("dev"))
     |> clip.help(help.simple(
       "charge Default Template",
       "Use --dir to provide a directory with pages",
@@ -37,12 +43,18 @@ pub fn run_main(create_pipeline) {
 
   let result = cmd |> clip.run(argv.load().arguments)
   case result {
-    Error(err) -> io.println_error(err) |> promise.resolve
+    Error(err) -> {
+      gleave.exit(1)
+      io.println_error(err) |> promise.resolve
+    }
     Ok(cmd_result) -> {
       use cmd_resolved <- promise.await(cmd_result)
       case cmd_resolved {
         Ok(_) -> io.println("Pipeline run successfully")
-        Error(err) -> io.println_error(err |> error.error_to_string)
+        Error(err) -> {
+          gleave.exit(1)
+          io.println_error(err |> error.error_to_string)
+        }
       }
       |> promise.resolve
     }

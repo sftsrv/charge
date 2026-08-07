@@ -29,12 +29,20 @@ Update snapshots
 gleam run -m birdie
 ```
 
-## test-default
+## run-default
 
 Runs the static site generator using the default preset and outputs it to .test-out
 
 ```sh
 gleam run -m charge/preset/default -- --pages test/workspace/pages --static test/workspace/static --out .test-out
+```
+
+## dev-default
+
+Runs the static site generator using the default preset and outputs it to .test-out with the --dev flag
+
+```sh
+gleam run -m charge/preset/default -- --pages test/workspace/pages --static test/workspace/static --out .test-out --dev
 ```
 
 ## docs

@@ -3,6 +3,7 @@ import charge/component
 import charge/error.{type ChargeResult}
 import charge/fs
 import charge/internal/component as internal_component
+import charge/internal/watch
 import gleam/javascript/promise.{type Promise}
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -103,7 +104,7 @@ pub fn switch_async(
 pub fn with_async(
   from: Pipeline(aggregate),
   render: fn(aggregate) -> Promise(ChargeResult(Rendered)),
-) {
+) -> Pipeline(aggregate) {
   Pipeline(..from, render: fn() {
     use prev_result <- promise.try_await(from.render())
 
@@ -293,10 +294,28 @@ pub fn with_summary(
 pub fn run(
   pipeline: Pipeline(aggregate),
 ) -> Promise(ChargeResult(List(Asset))) {
-  use _ <- async.try_resolve(
-    fs.delete_dir_if_exists(pipeline.out_dir)
-    |> fn(_) { Ok(Nil) },
-  )
+  pipeline |> run_(True)
+}
+
+/// Runs a pipeline without cleaning the directory first.
+/// In future this will retain any cached data as well
+pub fn run_dev(
+  pipeline: Pipeline(aggregate),
+) -> Promise(Result(List(Asset), error.ChargeError)) {
+  watch.watch(fs.cwd(), [pipeline.out_dir], fn() { run_(pipeline, False) })
+}
+
+/// Cleans the output directory and runs the pipeline
+fn run_(
+  pipeline: Pipeline(aggregate),
+  clean: Bool,
+) -> Promise(ChargeResult(List(Asset))) {
+  use _ <- async.try_resolve(case clean {
+    False -> Ok(Nil)
+    True ->
+      fs.delete_dir_if_exists(pipeline.out_dir)
+      |> result.replace(Nil)
+  })
 
   use rendered <- promise.try_await(pipeline.render())
 
@@ -415,7 +434,7 @@ pub fn if_html(asset: Asset, or_else: a, f: fn(HTMLFile) -> a) -> a {
 }
 
 /// Update the contents of an HTML file and convert it to an asset
-pub fn update_html(file, html) {
+pub fn update_html(file: HTMLFile, html: ElementTree) -> Asset {
   HTMLFile(..file, html:) |> HTMLFileAsset
 }
 
