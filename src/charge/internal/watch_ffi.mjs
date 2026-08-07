@@ -24,25 +24,15 @@ export function watch(root, ignores, f) {
 
   const watcher = fs.watch(root, {
     recursive: true,
-    ignore: (file) => {
-      const path = abs(file)
-      const isIgnored = ignores.some(d => path.startsWith(d))
-
-      if (isIgnored) {
-        return true
-      }
-
-      if (file.endsWith(".bck")) {
-        return true
-      }
-
-      return false
-    }
   }, (_ev, file) => {
     if (!file) return
 
+
+    const ignored = ignores.some(d => abs(file).startsWith(d))
+    if (ignored) return
+
     if (running) {
-      console.log("currently running, update queued")
+      console.log(file, "changed, currently running, update queued")
       queued = true
       return
     }

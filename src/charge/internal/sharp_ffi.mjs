@@ -29,6 +29,8 @@ export async function generate(inputFile, outputFile, size) {
 
   cache.generate.add(key)
 
+  console.log("optimizing", inputFile, outputFile, size)
+
   try {
     const sharp = new Sharp(inputFile, {
       autoOrient: true,

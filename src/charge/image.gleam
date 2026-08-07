@@ -6,7 +6,6 @@ import charge/fs
 import charge/internal/sharp
 import gleam/dict
 import gleam/float
-import gleam/io
 import gleam/javascript/promise
 import gleam/list
 import gleam/option.{type Option, None, Some}
@@ -83,7 +82,6 @@ fn can_optimize(input_path: fs.Path) -> Bool {
 fn optimize_image_task(out_dir, input_path, site_path) {
   use output_path <- async.try_resolve(fs.site_path_to_path(out_dir, site_path))
 
-  io.println("optimize: " <> input_path |> fs.path_to_string)
   sharp.optimize_image(input_path, output_path)
   |> promise.map_try(fn(_) { Ok([site_path]) })
 }
