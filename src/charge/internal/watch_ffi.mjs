@@ -4,7 +4,7 @@ import path from 'node:path';
 /**
  * @param {string} p
  */
-function abs(p){
+function abs(p) {
   return path.join(process.cwd(), p)
 }
 
@@ -26,10 +26,19 @@ export function watch(root, ignores, f) {
     recursive: true,
     ignore: (file) => {
       const path = abs(file)
-      console.log(path, ignores)
-      return ignores.some(d => path.startsWith(d))
+      const isIgnored = ignores.some(d => path.startsWith(d))
+
+      if (isIgnored) {
+        return true
+      }
+
+      if (file.endsWith(".bck")) {
+        return true
+      }
+
+      return false
     }
-  }, async (_ev, file) => {
+  }, (_ev, file) => {
     if (!file) return
 
     if (running) {
@@ -38,13 +47,18 @@ export function watch(root, ignores, f) {
       return
     }
 
-    if (queued) {
-      console.log("starting new run")
-      queued = false
-      running = true
-      lastResult = await f(file)
-      running = false
-    }
+    running = true
+    setTimeout(async () => {
+      if (queued) {
+        console.log("re-running")
+        queued = false
+
+        lastResult = await f(file)
+
+        running = false
+      }
+    }, 1000)
+
   })
 
 

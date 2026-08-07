@@ -6,7 +6,7 @@ import gleam/list
 @external(javascript, "./watch_ffi.mjs", "watch")
 fn watch_(
   _root: String,
-  _dirs: Array(String),
+  _ignore: Array(String),
   _on_change: fn(String) -> Promise(a),
 ) -> Promise(a) {
   panic as "not supported for the given target"
