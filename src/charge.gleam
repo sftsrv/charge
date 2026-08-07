@@ -299,6 +299,10 @@ pub fn run(
 
 /// Runs a pipeline without cleaning the directory first.
 /// In future this will retain any cached data as well
+///
+/// This is currently only reactive to content changes and
+/// will not re-run if the Gleam source changes. Not sure
+/// if there's a way to make that work
 pub fn run_dev(
   pipeline: Pipeline(aggregate),
 ) -> Promise(Result(List(Asset), error.ChargeError)) {
