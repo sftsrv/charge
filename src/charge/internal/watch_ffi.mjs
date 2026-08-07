@@ -45,6 +45,7 @@ export function watch(root, ignores, f) {
 
         lastResult = await f(file)
 
+        console.log("done running")
         running = false
       }
     }, 1000)
