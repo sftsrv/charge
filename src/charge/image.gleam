@@ -188,8 +188,6 @@ pub fn read_metadata(input_file: fs.Path) -> Promise(ChargeResult(Metadata)) {
         exif: ExifMetadata(None, None, None, None, None, None, None, None),
       )
     Ok(meta) -> {
-      echo meta
-
       Metadata(
         sharp_meta.width,
         sharp_meta.height,
@@ -230,7 +228,6 @@ pub fn read_metadata(input_file: fs.Path) -> Promise(ChargeResult(Metadata)) {
             }),
         ),
       )
-      |> echo
     }
   }
   |> Ok
