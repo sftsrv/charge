@@ -5,7 +5,7 @@ import { Result$Ok, Result$Error }
   // @ts-expect-error relative this file's location in build/dev/javascript/web
   from "../../../prelude.mjs";
 
-import { Metadata }
+import { SharpMetadata }
   // @ts-expect-error relative points to the compiled version of sharp.gleam
   from "./sharp.mjs";
 
@@ -71,7 +71,7 @@ export async function meta(inputFile) {
     const meta = await sharp.rotate().metadata()
     const { width, height } = meta.autoOrient
 
-    const result = new Metadata(width, height)
+    const result = new SharpMetadata(width, height)
     cache.meta.set(inputFile, result)
 
     return Result$Ok(result)

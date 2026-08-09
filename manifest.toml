@@ -12,6 +12,7 @@ packages = [
   { name = "clip", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "clip", source = "hex", outer_checksum = "FFDF5539D967399D22C58AADBF17423C56B5506055A7064D2A6620ED928E9ECF" },
   { name = "edit_distance", version = "3.0.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "edit_distance", source = "hex", outer_checksum = "DE588BC3483ED6DBA717211B59F3178891A5FC6F1C00D415AE8C4233EAFB94B1" },
   { name = "envoy", version = "1.2.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "envoy", source = "hex", outer_checksum = "9C6FBB6BFA02A52798BEEC5977A738CAD6E4A057F4B67FD0C8061AD2502C191A" },
+  { name = "file_streams", version = "1.7.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "file_streams", source = "hex", outer_checksum = "62757932B5FAC14FC9D0EE69BC4694DC6EA9F0FE6E198F695711C4FCAC1F7A26" },
   { name = "filepath", version = "1.1.2", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "filepath", source = "hex", outer_checksum = "B06A9AF0BF10E51401D64B98E4B627F1D2E48C154967DA7AF4D0914780A6D40A" },
   { name = "glance", version = "7.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib", "glexer"], otp_app = "glance", source = "hex", outer_checksum = "EA52986965408D43003A1760E41457493EB96098DE193E6AD8646930EC190CB9" },
   { name = "gleam_community_ansi", version = "1.5.0", build_tools = ["gleam"], requirements = ["gleam_community_colour", "gleam_regexp", "gleam_stdlib"], otp_app = "gleam_community_ansi", source = "hex", outer_checksum = "B5AA433AF84313E23FDF90CCFF752B9380FE9FFCE02B2949D49B7AACCC77B16D" },
@@ -25,6 +26,7 @@ packages = [
   { name = "gleeunit", version = "1.11.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "gleeunit", source = "hex", outer_checksum = "EC31ABA74256AEA531EDF8169931D775BBB384FED0A8A1BDC4DD9354E3E21826" },
   { name = "glentities", version = "6.2.1", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "glentities", source = "hex", outer_checksum = "78A0B28789C1A7840468C683FC9588B0B59AA38BE8CF5DACD1AF2E60A91AE638" },
   { name = "glexer", version = "2.5.0", build_tools = ["gleam"], requirements = ["gleam_stdlib", "splitter"], otp_app = "glexer", source = "hex", outer_checksum = "D423CF63B8D4F9654EF53D0AF4904B249EB0679BD41C63440170AC508C9CC65E" },
+  { name = "glexif", version = "0.1.0", build_tools = ["gleam"], requirements = ["file_streams", "gleam_stdlib"], otp_app = "glexif", source = "hex", outer_checksum = "2C541F17131B97D2CFCEC7A23A24B5F9DF34AE98786D25FC1048B9EDAD1875B4" },
   { name = "global_value", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "global_value", source = "hex", outer_checksum = "23F74C91A7B819C43ABCCBF49DAD5BB8799D81F2A3736BA9A534BD47F309FF4F" },
   { name = "houdini", version = "1.2.1", build_tools = ["gleam"], requirements = [], otp_app = "houdini", source = "hex", outer_checksum = "6F8AC2F12974567FB744BEA66AC93CEB76AAEA19AD28564623F76CDA9BC26A85" },
   { name = "htmerl", version = "0.2.1", build_tools = ["rebar3"], requirements = [], otp_app = "htmerl", source = "hex", outer_checksum = "EBD3F54E6DC98594F54BB3C214F5B96CAE90D1AE2A4B7E487FBE94A929110015" },
@@ -53,6 +55,7 @@ gleam_stdlib = { version = ">= 1.0.0 and < 2.0.0" }
 gleave = { version = ">= 1.0.1 and < 2.0.0" }
 gleeunit = { version = ">= 1.0.0 and < 2.0.0" }
 glentities = { version = ">= 6.2.1 and < 7.0.0" }
+glexif = { version = ">= 0.1.0 and < 1.0.0" }
 mellie = { version = ">= 2.0.0 and < 3.0.0" }
 parz = { version = ">= 1.1.0 and < 2.0.0" }
 simplifile = { version = ">= 2.6.0 and < 3.0.0" }

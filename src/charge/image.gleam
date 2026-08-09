@@ -1,20 +1,39 @@
 import charge
 import charge/async
 import charge/component
-import charge/error
+import charge/error.{type ChargeResult}
 import charge/fs
 import charge/internal/sharp
 import gleam/dict
 import gleam/float
-import gleam/javascript/promise
+import gleam/int
+import gleam/javascript/promise.{type Promise}
 import gleam/list
 import gleam/option.{type Option, None, Some}
 import gleam/pair
 import gleam/result
 import gleam/string
 import gleam/uri
+import glexif
 import mellie
 import mellie/attr
+
+pub type ExifMetadata {
+  ExifMetadata(
+    iso: Option(String),
+    shutter_speed: Option(String),
+    aperture: Option(String),
+    camera_make: Option(String),
+    camera_model: Option(String),
+    lens_make: Option(String),
+    lens_model: Option(String),
+    focal_length: Option(String),
+  )
+}
+
+pub type Metadata {
+  Metadata(width: Int, height: Int, exif: ExifMetadata)
+}
 
 fn optimized_images_path() {
   let assert Ok(path) = fs.site_path_from_string("/optimized-images")
@@ -152,6 +171,70 @@ fn optimized_ext_mapping() {
 fn get_output_path(optimized_images_path: fs.SitePath, input: fs.Path) {
   fs.to_site_path(fs.cwd(), input, optimized_ext_mapping())
   |> fs.concat_site_path(optimized_images_path, _)
+}
+
+pub fn read_metadata(input_file: fs.Path) -> Promise(ChargeResult(Metadata)) {
+  let path = input_file |> fs.to_abs_string
+  // using sharp for the height and width sincce this correctly accounts for rotation
+  // and supports all image formats (not just jpeg)
+  use sharp_meta <- promise.try_await(sharp.meta(input_file))
+
+  let glexif_meta = glexif.get_exif_data_for_file(path)
+  case glexif_meta {
+    Error(_) ->
+      Metadata(
+        sharp_meta.width,
+        sharp_meta.height,
+        exif: ExifMetadata(None, None, None, None, None, None, None, None),
+      )
+    Ok(meta) -> {
+      echo meta
+
+      Metadata(
+        sharp_meta.width,
+        sharp_meta.height,
+        exif: ExifMetadata(
+          camera_make: meta.make,
+          camera_model: meta.model,
+          lens_make: meta.lens_make,
+          lens_model: meta.lens_model,
+          focal_length: meta.focal_length
+            |> option.map(fn(f) {
+              case f {
+                f if f <. 10.0 -> f |> float.to_precision(1) |> float.to_string
+                _ -> f |> float.round |> int.to_string
+              }
+            }),
+          iso: meta.iso |> option.map(int.to_string),
+          shutter_speed: meta.exposure_time
+            |> option.map(fn(f) {
+              case f.denominator {
+                1 -> f.numerator |> int.to_string <> "\""
+                _ ->
+                  f.numerator |> int.to_string
+                  <> "/"
+                  <> f.denominator |> int.to_string
+                  <> "s"
+              }
+            }),
+          aperture: meta.f_number
+            |> option.or(meta.aperture_value)
+            |> option.map(fn(a) {
+              let is_zero_decimal =
+                float.absolute_value(a -. float.to_precision(a, 1)) <. 0.01
+
+              case is_zero_decimal {
+                True -> a |> float.round |> int.to_string
+                False -> a |> float.to_precision(1) |> float.to_string
+              }
+            }),
+        ),
+      )
+      |> echo
+    }
+  }
+  |> Ok
+  |> promise.resolve
 }
 
 fn render_image(img, input: fs.Path, output: fs.SitePath) {
