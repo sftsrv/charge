@@ -217,13 +217,15 @@ pub fn read_metadata(input_file: fs.Path) -> Promise(ChargeResult(Metadata)) {
             }),
           aperture: meta.f_number
             |> option.or(meta.aperture_value)
-            |> option.map(fn(a) {
+            |> option.then(fn(a) {
               let is_zero_decimal =
                 float.absolute_value(a -. float.to_precision(a, 1)) <. 0.01
 
-              case is_zero_decimal {
-                True -> a |> float.round |> int.to_string
-                False -> a |> float.to_precision(1) |> float.to_string
+              case a, is_zero_decimal {
+                0.0, _ -> None
+                _, True -> a |> float.round |> int.to_string |> Some
+                _, False ->
+                  a |> float.to_precision(1) |> float.to_string |> Some
               }
             }),
         ),
