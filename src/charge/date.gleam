@@ -29,7 +29,7 @@ pub fn parser() {
   |> combinators.then(combinators.left(digits, dash))
   |> combinators.then(digits)
   |> combinators.map(fn(parts) {
-    let #(#(year, day), month) = parts
+    let #(#(year, month), day) = parts
 
     IsoDate(year:, month:, day:)
   })
