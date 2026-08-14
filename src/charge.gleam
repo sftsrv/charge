@@ -195,16 +195,17 @@ pub fn with_static_dir(
 /// Async components can be defined using `with_async_component`
 pub fn with_components(
   from: Pipeline(aggregate),
-  comps: List(component.Component(ChargeResult(ElementTree))),
+  comps: List(component.Component(aggregate, ChargeResult(ElementTree))),
 ) -> Pipeline(aggregate) {
   from
-  |> map_asset(fn(_, a) {
+  |> map_asset(fn(agg, a) {
     use file <- if_html(a, a |> Ok)
     let data =
       component.RenderData(
         out_dir: from.out_dir,
         site_path: file.path,
         source_path: file.source,
+        data: agg,
       )
     internal_component.render(data, file.html, comps)
     |> result.map(fn(html) { HTMLFile(..file, html:) |> HTMLFileAsset })
@@ -217,7 +218,7 @@ pub fn with_components(
 /// Async components can be defined using `with_async_component`
 pub fn with_component(
   from: Pipeline(aggregate),
-  component: component.Component(ChargeResult(ElementTree)),
+  component: component.Component(aggregate, ChargeResult(ElementTree)),
 ) -> Pipeline(aggregate) {
   with_components(from, [component])
 }
@@ -228,10 +229,13 @@ pub fn with_component(
 /// Sync components can be defined using `with_component` or `with_components`
 pub fn with_async_component(
   from: Pipeline(aggregate),
-  comp: component.Component(Promise(Result(ElementTree, error.ChargeError))),
+  comp: component.Component(
+    aggregate,
+    Promise(Result(ElementTree, error.ChargeError)),
+  ),
 ) -> Pipeline(aggregate) {
   from
-  |> map_asset_async(fn(_, a) {
+  |> map_asset_async(fn(agg, a) {
     use file <- if_html(a, promise.resolve(Ok(a)))
 
     let data =
@@ -239,6 +243,7 @@ pub fn with_async_component(
         out_dir: from.out_dir,
         site_path: file.path,
         source_path: file.source,
+        data: agg,
       )
 
     internal_component.render_async(data, file.html, comp)
