@@ -252,7 +252,7 @@ fn render_image(img, input: fs.Path, output: fs.SitePath) {
     }
     |> mellie.attribute("orientation", _)
 
-  let alt = mellie.attr(img, "img") |> option.from_result
+  let alt = mellie.attr(img, "alt") |> option.from_result
 
   let src = output |> fs.site_path_to_string |> percent_encode |> attr.src
   let alt =
