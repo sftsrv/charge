@@ -1,0 +1,89 @@
+---
+version: 2.0.2
+title: custom component assets
+---
+HTMLFile: test/workspace/pages/blog/second_post.md:/blog/second_post.html
+<html lang="en">
+  <head>
+    <title>Second Post</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="/favicon.png">
+    <link href="/default.css" rel="stylesheet">
+    <noscript>
+      <link href="/index.css" rel="stylesheet">
+    </noscript>
+    <script defer="true" type="module" src="/index.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>Second Post</h1>
+      <nav>
+        <ul>
+          <li>
+            <a href="/special">special</a>
+          </li>
+          <li>
+            <a href="/blog">blog</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+    <main>
+      <div>
+        <h2>Welcome!</h2>
+        <p>This is some content in Markdown that can be rendered to your site<sup id="footnote-reference-1" class="footnote-reference">
+            <a href="#footnote-target-1">1</a>
+          </sup>
+          <sup id="footnote-reference-2" class="footnote-reference">
+            <a href="#footnote-target-2">2</a>
+          </sup>
+        </p>
+        <p>Here&#39;s a code block and some other
+          <em>fancy</em>
+          <sup id="footnote-reference-Footnote about formatting" class="footnote-reference">
+            <a href="#footnote-target-Footnote about formatting">Footnote about formatting</a>
+          </sup>
+          formatting</p>
+        <data value="Nested Heading + code |> print_me |> echo +  + // The footnote parser should not detect this [^1] or [^footnote] +  + ">My Updated Tag</data>
+        <p>
+          <my-updated-async-tag data="hello world">Extracted text:
+            hello world</my-updated-async-tag>
+        </p>
+        <img aspect-ratio="1.4989969909729188" orientation="horizontal" alt="special-1" src="/optimized-images/test/workspace/static/images/special-1.webp">
+        <h3>Some Images to Optimize</h3>
+        <p>
+          <img aspect-ratio="1.4989969909729188" orientation="horizontal" alt="My first image" src="/optimized-images/test/workspace/static/images/image-1.webp">
+        </p>
+        <p>
+          <img aspect-ratio="1.5037593984962405" orientation="horizontal" alt="My second image" src="/optimized-images/test/workspace/static/images/image-2.webp">
+        </p>
+        <h2>Footnotes</h2>
+        <ul>
+          <li>
+            <span>
+              <a id="footnote-target-1" href="#footnote-reference-1" class="footnote-target">1</a>:</span>
+            Or someone else&#39;s site I guess</li>
+          <li>
+            <span>
+              <a id="footnote-target-2" href="#footnote-reference-2" class="footnote-target">2</a>:</span>
+            Or maybe just an RSS feed</li>
+          <li>
+            <span>
+              <a id="footnote-target-Footnote about formatting" href="#footnote-reference-Footnote about formatting" class="footnote-target">Footnote about formatting</a>:</span>
+            Or as fancy as you can get in Markdown I guess</li>
+        </ul>
+      </div>
+    </main>
+  </body>
+</html>
+
+HTMLFile: [no source]:/blog/second_post_text.html
+Nested Heading
+code |&gt; print_me |&gt; echo
+
+// The footnote parser should not detect this [^1] or [^footnote]
+
+Text File : /frontmatter-keys.txt:
+special
+blog

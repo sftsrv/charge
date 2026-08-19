@@ -19,12 +19,12 @@ pub type RSSItem {
 }
 
 pub type RSSFeed {
-  RSSFeed(title: String, description: String, base_url: String)
-}
-
-fn rss_path() {
-  let assert Ok(path) = fs.site_path_from_string("/feed/rss.xml")
-  path
+  RSSFeed(
+    path: fs.SitePath,
+    title: String,
+    description: String,
+    base_url: String,
+  )
 }
 
 pub fn with_rss(
@@ -40,41 +40,29 @@ pub fn with_rss(
       })
       |> option.values
 
-    render(feed, items) |> charge.text_file(rss_path(), _) |> list.wrap |> Ok
+    render(feed, items) |> charge.text_file(feed.path, _) |> list.wrap |> Ok
   })
 }
 
 pub fn render(feed: RSSFeed, pages: List(RSSItem)) {
-  let assert Ok(blog_path) = fs.site_path_from_string("/blog")
-  let assert Ok(rss_only_path) = fs.site_path_from_string("/rss-only")
-  let rss_pages =
-    pages
-    |> list.filter(fn(p) {
-      fs.site_path_starts_with(p.path, blog_path)
-      || fs.site_path_starts_with(p.path, rss_only_path)
-    })
+  pages
+  |> list.map(fn(p) {
+    let url = feed.base_url <> p.path |> fs.site_path_to_string
 
-  let feed =
-    rss_pages
-    |> list.map(fn(p) {
-      let url = feed.base_url <> p.path |> fs.site_path_to_string
-
-      [
-        Some(title(p.title)),
-        Some(link(url)),
-        Some(guid(url)),
-        option.map(p.description, description),
-        option.map(p.date, pub_date),
-        p.content |> option.map(content),
-      ]
-      |> option.values
-      |> item
-    })
-    |> channel(feed, _)
-    |> rss
-    |> to_xml
-
-  feed
+    [
+      Some(title(p.title)),
+      Some(link(url)),
+      Some(guid(url)),
+      option.map(p.description, description),
+      option.map(p.date, pub_date),
+      p.content |> option.map(content),
+    ]
+    |> option.values
+    |> item
+  })
+  |> channel(feed, _)
+  |> rss
+  |> to_xml
 }
 
 fn xml_element(tag, attrs, children) {
