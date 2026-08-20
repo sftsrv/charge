@@ -184,6 +184,8 @@ pub type Extension {
   PNG
   JPEG
   WEBP
+  YAML
+  YML
 }
 
 fn to_suffix(ext: Extension) {
@@ -195,6 +197,8 @@ fn to_suffix(ext: Extension) {
     JPG -> ".jpg"
     JPEG -> ".jpeg"
     WEBP -> ".webp"
+    YAML -> ".yaml"
+    YML -> ".yml"
   }
 }
 
